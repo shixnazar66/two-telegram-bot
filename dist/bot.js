@@ -15,35 +15,44 @@ const db_config_1 = require("./config/db.config");
 const token = env_config_1.env.BOT_TOKEN;
 const bot = new grammy_1.Bot(token);
 bot.command('start', (ctx) => __awaiter(void 0, void 0, void 0, function* () {
-    yield ctx.reply('tanlang', { reply_markup: savol });
+    yield ctx.reply('tanlang', { reply_markup: question });
 }));
-const savol = new grammy_1.Keyboard()
+const question = new grammy_1.Keyboard()
     .text('ona tili').text('matematika').row()
     .text('fizika').text('biologiya').row()
     .text('english')
     .resized();
-bot.hears('ona tili', (ctx) => __awaiter(void 0, void 0, void 0, function* () {
-    const [[jv]] = yield db_config_1.pool.query("select savol from test where fan = 'ona tili'");
-    const [[j]] = yield db_config_1.pool.query("select javob from test where fan = 'ona tili'");
-    yield ctx.reply(`${jv.savol} 
-${j.javob}`, { reply_markup: answer });
+bot.on('message', (ctx) => __awaiter(void 0, void 0, void 0, function* () {
+    const text = ctx.message.text;
+    const [[fans]] = yield db_config_1.pool.query(`select fan from test where fan = '${text}'`);
+    if (!fans) {
+        ctx.reply('bunday fan yoq');
+        return;
+    }
+    const [savol] = yield db_config_1.pool.query(`select * from test where fan = '${text}'`);
+    for (let i in savol) {
+        const [javob] = yield db_config_1.pool.query(`select javob from test where fan = '${text}'`);
+        const answer = new grammy_1.InlineKeyboard()
+            .text('A', `a ${savol[i].ID}`).text('B', `b ${savol[i].ID}`).text('C', `c ${savol[i].ID}`).row();
+        yield ctx.reply(`${savol[i].savol} 
+${javob[i].javob}`, { reply_markup: answer });
+    }
 }));
-const answer = new grammy_1.InlineKeyboard()
-    .text('A', 'a').text('B', 'b').text('C', 'c').row();
-bot.callbackQuery('b', (ctx) => __awaiter(void 0, void 0, void 0, function* () {
+var ball = 0;
+bot.on("callback_query:data", (ctx) => __awaiter(void 0, void 0, void 0, function* () {
     const str = ctx.callbackQuery.data;
-    console.log(str);
-    const [[jv]] = yield db_config_1.pool.query("select togri_javob from test where fan = 'ona tili'");
-    if (str == jv.togri_javob) {
-        yield ctx.reply('true');
+    const userID = ctx.from.id;
+    const data = new Date();
+    yield db_config_1.pool.query(`insert into result (userID,create_AT) values ('${userID}','${data}')`);
+    const [[javob]] = yield db_config_1.pool.query(`select * from test where ID = '${str[2]}'`);
+    const jv = javob.togri_javob;
+    if (jv != str[0]) {
+        ctx.reply('xato');
+        return;
     }
     else {
-        yield ctx.reply('false');
+        yield db_config_1.pool.query(`update result set ball = '${ball += 1}' where userID = '${userID}'`);
+        ctx.reply('togri');
     }
 }));
-// bot.on('message', async (ctx) => {
-//   const text = ctx.message.text
-//   console.log(text);
-//   await  ctx.reply(`${text}`)
-// })
 bot.start();
