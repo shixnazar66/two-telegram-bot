@@ -1,4 +1,27 @@
 "use strict";
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    var desc = Object.getOwnPropertyDescriptor(m, k);
+    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
+      desc = { enumerable: true, get: function() { return m[k]; } };
+    }
+    Object.defineProperty(o, k2, desc);
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
+    Object.defineProperty(o, "default", { enumerable: true, value: v });
+}) : function(o, v) {
+    o["default"] = v;
+});
+var __importStar = (this && this.__importStar) || function (mod) {
+    if (mod && mod.__esModule) return mod;
+    var result = {};
+    if (mod != null) for (var k in mod) if (k !== "default" && Object.prototype.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
+    __setModuleDefault(result, mod);
+    return result;
+};
 var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
     function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
     return new (P || (P = Promise))(function (resolve, reject) {
@@ -9,11 +32,48 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
     });
 };
 Object.defineProperty(exports, "__esModule", { value: true });
+exports.addQuestion = void 0;
 const grammy_1 = require("grammy");
+const grammy = __importStar(require("grammy"));
+const conversations_1 = require("@grammyjs/conversations");
 const env_config_1 = require("./config/env.config");
 const db_config_1 = require("./config/db.config");
 const token = env_config_1.env.BOT_TOKEN;
 const bot = new grammy_1.Bot(token);
+bot.use(grammy.session({ initial: () => ({}) }));
+bot.use((0, conversations_1.conversations)());
+bot.use((0, conversations_1.createConversation)(addQuestion, { id: 'addquestion' }));
+function addQuestion(conversation, ctx) {
+    return __awaiter(this, void 0, void 0, function* () {
+        //theme
+        ctx.reply("savol fanini yuboring");
+        const theme = yield conversation.form.text();
+        //question
+        ctx.reply("savolni yuboring");
+        const text = yield conversation.form.text();
+        //question right answer
+        ctx.reply("tog'ri javobni yuboring");
+        const rightAnswer = yield conversation.form.text();
+        //answers
+        const answers = [];
+        for (let i = 0; i < 3;) {
+            ctx.reply(`${i + 1}inichi javobni yuboring`);
+            const answer = yield conversation.form.text();
+            if (answers.includes(answer) || rightAnswer == answer) {
+                ctx.reply("bu javob allaqachon mavjud");
+            }
+            else {
+                answers.push(answer);
+                i++;
+            }
+        }
+        const db = yield db_config_1.pool.query(`INSERT INTO test (fan,savol,javob,togri_javob) VALUES('${theme}','${text}','${answers.join("\r\n")}','${rightAnswer}')`);
+    });
+}
+exports.addQuestion = addQuestion;
+bot.hears("add", (ctx) => __awaiter(void 0, void 0, void 0, function* () {
+    ctx.conversation.enter('addquestion');
+}));
 bot.command('start', (ctx) => __awaiter(void 0, void 0, void 0, function* () {
     const user = ctx.message;
     const data = new Date();
@@ -54,7 +114,7 @@ bot.on("callback_query:data", (ctx) => __awaiter(void 0, void 0, void 0, functio
     const userID = ctx.from.id;
     const [[b]] = yield db_config_1.pool.query(`select * from result where userID = '${userID}'`);
     let ball = b.ball;
-    const [[javob]] = yield db_config_1.pool.query(`select * from test where ID = '${str[2]}'`);
+    const [[javob]] = yield db_config_1.pool.query(`select * from test where ID = '${str.split(" ")[1]}'`);
     const jv = javob.togri_javob;
     if (jv != str[0]) {
         ctx.reply('xato');
