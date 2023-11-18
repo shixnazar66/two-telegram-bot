@@ -15,6 +15,9 @@ const db_config_1 = require("./config/db.config");
 const token = env_config_1.env.BOT_TOKEN;
 const bot = new grammy_1.Bot(token);
 bot.command('start', (ctx) => __awaiter(void 0, void 0, void 0, function* () {
+    const user = ctx.message;
+    const data = new Date();
+    yield db_config_1.pool.query(`insert into result (userID,create_AT,ball) values ('${user === null || user === void 0 ? void 0 : user.chat.id}','${data}','0')`);
     yield ctx.reply('tanlang', { reply_markup: question });
 }));
 const question = new grammy_1.Keyboard()
@@ -22,6 +25,14 @@ const question = new grammy_1.Keyboard()
     .text('fizika').text('biologiya').row()
     .text('english')
     .resized();
+bot.hears('me', (ctx) => __awaiter(void 0, void 0, void 0, function* () {
+    var _a, _b;
+    const id = (_a = ctx.from) === null || _a === void 0 ? void 0 : _a.id;
+    const name = (_b = ctx.from) === null || _b === void 0 ? void 0 : _b.first_name;
+    const [[user]] = yield db_config_1.pool.query(`select ball from result where userID = '${id}'`);
+    yield ctx.reply(`${name} 
+balingiz ${user.ball}`);
+}));
 bot.on('message', (ctx) => __awaiter(void 0, void 0, void 0, function* () {
     const text = ctx.message.text;
     const [[fans]] = yield db_config_1.pool.query(`select fan from test where fan = '${text}'`);
@@ -38,12 +49,11 @@ bot.on('message', (ctx) => __awaiter(void 0, void 0, void 0, function* () {
 ${javob[i].javob}`, { reply_markup: answer });
     }
 }));
-var ball = 0;
 bot.on("callback_query:data", (ctx) => __awaiter(void 0, void 0, void 0, function* () {
     const str = ctx.callbackQuery.data;
     const userID = ctx.from.id;
-    const data = new Date();
-    yield db_config_1.pool.query(`insert into result (userID,create_AT) values ('${userID}','${data}')`);
+    const [[b]] = yield db_config_1.pool.query(`select * from result where userID = '${userID}'`);
+    let ball = b.ball;
     const [[javob]] = yield db_config_1.pool.query(`select * from test where ID = '${str[2]}'`);
     const jv = javob.togri_javob;
     if (jv != str[0]) {

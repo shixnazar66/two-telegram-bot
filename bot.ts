@@ -8,6 +8,9 @@ const token = env.BOT_TOKEN
 const bot = new Bot(token);
 
 bot.command('start', async (ctx) => {
+    const user = ctx.message
+    const data = new Date()
+    await pool.query(`insert into result (userID,create_AT,ball) values ('${user?.chat.id}','${data}','0')`)
     await ctx.reply('tanlang',{reply_markup:question})
  }
 )
@@ -17,6 +20,15 @@ bot.command('start', async (ctx) => {
   .text('fizika').text('biologiya').row()
   .text('english')
   .resized()
+
+
+  bot.hears('me',async (ctx) => {
+    const id =  ctx.from?.id
+    const name = ctx.from?.first_name
+    const [[user]]:any = await pool.query(`select ball from result where userID = '${id}'`)
+    await ctx.reply(`${name} 
+balingiz ${user.ball}`)
+    })
 
 
  bot.on('message', async (ctx) => {
@@ -36,15 +48,11 @@ ${javob[i].javob}`,{reply_markup:answer})}
  })
 
 
-
-
-var ball = 0
-
 bot.on("callback_query:data",async (ctx) => {
   const str:any = ctx.callbackQuery.data
   const userID = ctx.from.id
-  const data = new Date()
-  await pool.query(`insert into result (userID,create_AT) values ('${userID}','${data}')`)
+  const [[b]]:any = await pool.query(`select * from result where userID = '${userID}'`)
+  let  ball = b.ball
   const [[javob]]:any = await pool.query(`select * from test where ID = '${str[2]}'`)
   const jv = javob.togri_javob
   if(jv != str[0]){
@@ -57,5 +65,6 @@ bot.on("callback_query:data",async (ctx) => {
 })
 
   
+
 
 bot.start();
