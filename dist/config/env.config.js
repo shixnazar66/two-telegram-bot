@@ -6,4 +6,7 @@ const envalid_1 = require("envalid");
 (0, dotenv_1.config)();
 exports.env = (0, envalid_1.cleanEnv)(process.env, {
     BOT_TOKEN: (0, envalid_1.str)(),
+    ADMIN_ID: (0, envalid_1.num)(),
+    CHANNEL_ID: (0, envalid_1.num)(),
+    CHANNEL_LINK: (0, envalid_1.str)()
 });

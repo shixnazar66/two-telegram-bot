@@ -8,6 +8,9 @@ import {
 } from "@grammyjs/conversations";
 import { env } from "./config/env.config";
 import { pool } from "./config/db.config";
+import { adminGuard } from "./guards/admin-guard";
+import { channelGuard } from "./guards/chanel-guard";
+
 const token = env.BOT_TOKEN
 
 type MyContext = Context & ConversationFlavor;
@@ -39,7 +42,7 @@ export async function addQuestion(
   //answers
   const answers: string[] = [];
   for (let i = 0; i < 3; ) {
-    ctx.reply(`${i + 1}inichi javobni yuboring`);
+    ctx.reply(`${i + 1} inichi javobni yuboring`);
 
     const answer = await conversation.form.text();
 
@@ -50,6 +53,7 @@ export async function addQuestion(
       i++;
     }
   }
+  ctx.reply('savol muffaqiyatli qoshildi')
   const db = await pool.query(
     `INSERT INTO test (fan,savol,javob,togri_javob) VALUES('${theme}','${text}','${answers.join(
       "\r\n"
@@ -57,13 +61,13 @@ export async function addQuestion(
   );
 }
 
-bot.hears("add", async (ctx) => {
+bot.hears("add", adminGuard, async (ctx) => {
   ctx.conversation.enter('addquestion')
 })
 
 
 
-bot.command('start', async (ctx) => {
+bot.command('start',channelGuard, async (ctx) => {
     const user = ctx.message
     const data = new Date()
     await pool.query(`insert into result (userID,create_AT,ball) values ('${user?.chat.id}','${data}','0')`)
@@ -78,7 +82,7 @@ bot.command('start', async (ctx) => {
   .resized()
 
 
-  bot.hears('me',async (ctx) => {
+  bot.hears('me', async (ctx) => {
     const id =  ctx.from?.id
     const name = ctx.from?.first_name
     const [[user]]:any = await pool.query(`select ball from result where userID = '${id}'`)
@@ -100,6 +104,7 @@ balingiz ${user.ball}`)
     const answer = new InlineKeyboard()
     .text('A',`a ${savol[i].ID}`).text('B',`b ${savol[i].ID}`).text('C',`c ${savol[i].ID}`).row()
     await ctx.reply(`${savol[i].savol} 
+
 ${javob[i].javob}`,{reply_markup:answer})}
 })
 
@@ -112,15 +117,14 @@ bot.on("callback_query:data",async (ctx) => {
   const [[javob]]:any = await pool.query(`select * from test where ID = '${str.split(" ")[1]}'`)  
   const jv = javob.togri_javob
   if(jv != str[0]){
-  ctx.reply('xato')
+  ctx.reply('javobingiz notogri❌')
   return
   }else{
     await pool.query (`update result set ball = '${ball+=1}' where userID = '${userID}'`)
-    ctx.reply('togri')
+    ctx.reply('javobingiz togri✅')
   }
 })
 
-  
 
 
 bot.start();

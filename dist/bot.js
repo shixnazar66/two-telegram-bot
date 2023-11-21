@@ -38,6 +38,8 @@ const grammy = __importStar(require("grammy"));
 const conversations_1 = require("@grammyjs/conversations");
 const env_config_1 = require("./config/env.config");
 const db_config_1 = require("./config/db.config");
+const admin_guard_1 = require("./guards/admin-guard");
+const chanel_guard_1 = require("./guards/chanel-guard");
 const token = env_config_1.env.BOT_TOKEN;
 const bot = new grammy_1.Bot(token);
 bot.use(grammy.session({ initial: () => ({}) }));
@@ -57,7 +59,7 @@ function addQuestion(conversation, ctx) {
         //answers
         const answers = [];
         for (let i = 0; i < 3;) {
-            ctx.reply(`${i + 1}inichi javobni yuboring`);
+            ctx.reply(`${i + 1} inichi javobni yuboring`);
             const answer = yield conversation.form.text();
             if (answers.includes(answer) || rightAnswer == answer) {
                 ctx.reply("bu javob allaqachon mavjud");
@@ -67,14 +69,15 @@ function addQuestion(conversation, ctx) {
                 i++;
             }
         }
+        ctx.reply('savol muffaqiyatli qoshildi');
         const db = yield db_config_1.pool.query(`INSERT INTO test (fan,savol,javob,togri_javob) VALUES('${theme}','${text}','${answers.join("\r\n")}','${rightAnswer}')`);
     });
 }
 exports.addQuestion = addQuestion;
-bot.hears("add", (ctx) => __awaiter(void 0, void 0, void 0, function* () {
+bot.hears("add", admin_guard_1.adminGuard, (ctx) => __awaiter(void 0, void 0, void 0, function* () {
     ctx.conversation.enter('addquestion');
 }));
-bot.command('start', (ctx) => __awaiter(void 0, void 0, void 0, function* () {
+bot.command('start', chanel_guard_1.channelGuard, (ctx) => __awaiter(void 0, void 0, void 0, function* () {
     const user = ctx.message;
     const data = new Date();
     yield db_config_1.pool.query(`insert into result (userID,create_AT,ball) values ('${user === null || user === void 0 ? void 0 : user.chat.id}','${data}','0')`);
@@ -106,6 +109,7 @@ bot.on('message', (ctx) => __awaiter(void 0, void 0, void 0, function* () {
         const answer = new grammy_1.InlineKeyboard()
             .text('A', `a ${savol[i].ID}`).text('B', `b ${savol[i].ID}`).text('C', `c ${savol[i].ID}`).row();
         yield ctx.reply(`${savol[i].savol} 
+
 ${javob[i].javob}`, { reply_markup: answer });
     }
 }));
@@ -117,12 +121,12 @@ bot.on("callback_query:data", (ctx) => __awaiter(void 0, void 0, void 0, functio
     const [[javob]] = yield db_config_1.pool.query(`select * from test where ID = '${str.split(" ")[1]}'`);
     const jv = javob.togri_javob;
     if (jv != str[0]) {
-        ctx.reply('xato');
+        ctx.reply('javobingiz notogri❌');
         return;
     }
     else {
         yield db_config_1.pool.query(`update result set ball = '${ball += 1}' where userID = '${userID}'`);
-        ctx.reply('togri');
+        ctx.reply('javobingiz togri✅');
     }
 }));
 bot.start();
