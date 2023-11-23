@@ -74,7 +74,14 @@ function addQuestion(conversation, ctx) {
     });
 }
 exports.addQuestion = addQuestion;
-bot.hears("add", admin_guard_1.adminGuard, (ctx) => __awaiter(void 0, void 0, void 0, function* () {
+bot.command("add", admin_guard_1.adminGuard, (ctx) => __awaiter(void 0, void 0, void 0, function* () {
+    var _a;
+    const id = (_a = ctx.from) === null || _a === void 0 ? void 0 : _a.id;
+    const [[b]] = yield db_config_1.pool.query(`select * from result where userID = '${id}'`);
+    if (!b) {
+        ctx.reply('start bosib boshidan boshlang');
+        return;
+    }
     ctx.conversation.enter('addquestion');
 }));
 bot.command('start', chanel_guard_1.channelGuard, (ctx) => __awaiter(void 0, void 0, void 0, function* () {
@@ -88,10 +95,15 @@ const question = new grammy_1.Keyboard()
     .text('fizika').text('biologiya').row()
     .text('english')
     .resized();
-bot.hears('me', (ctx) => __awaiter(void 0, void 0, void 0, function* () {
-    var _a, _b;
-    const id = (_a = ctx.from) === null || _a === void 0 ? void 0 : _a.id;
-    const name = (_b = ctx.from) === null || _b === void 0 ? void 0 : _b.first_name;
+bot.command('me', (ctx) => __awaiter(void 0, void 0, void 0, function* () {
+    var _b, _c;
+    const id = (_b = ctx.from) === null || _b === void 0 ? void 0 : _b.id;
+    const [[b]] = yield db_config_1.pool.query(`select * from result where userID = '${id}'`);
+    if (!b) {
+        ctx.reply('start bosib boshidan boshlang');
+        return;
+    }
+    const name = (_c = ctx.from) === null || _c === void 0 ? void 0 : _c.first_name;
     const [[user]] = yield db_config_1.pool.query(`select ball from result where userID = '${id}'`);
     yield ctx.reply(`${name} 
 balingiz ${user.ball}`);
@@ -108,7 +120,7 @@ bot.on('message', (ctx) => __awaiter(void 0, void 0, void 0, function* () {
         const [javob] = yield db_config_1.pool.query(`select javob from test where fan = '${text}'`);
         const answer = new grammy_1.InlineKeyboard()
             .text('A', `a ${savol[i].ID}`).text('B', `b ${savol[i].ID}`).text('C', `c ${savol[i].ID}`).row();
-        yield ctx.reply(`${savol[i].savol} 
+        yield ctx.reply(`${savol[i].savol}? 
 
 ${javob[i].javob}`, { reply_markup: answer });
     }
@@ -117,6 +129,10 @@ bot.on("callback_query:data", (ctx) => __awaiter(void 0, void 0, void 0, functio
     const str = ctx.callbackQuery.data;
     const userID = ctx.from.id;
     const [[b]] = yield db_config_1.pool.query(`select * from result where userID = '${userID}'`);
+    if (!b) {
+        ctx.reply('start bosib boshidan boshlang');
+        return;
+    }
     let ball = b.ball;
     const [[javob]] = yield db_config_1.pool.query(`select * from test where ID = '${str.split(" ")[1]}'`);
     const jv = javob.togri_javob;
@@ -125,6 +141,8 @@ bot.on("callback_query:data", (ctx) => __awaiter(void 0, void 0, void 0, functio
         return;
     }
     else {
+        const data = new Date();
+        yield db_config_1.pool.query(`insert into result (userID,create_AT,javob,fan) values ('${userID}','${data}','${str[0]}','${str.split(" ")[1]}')`);
         yield db_config_1.pool.query(`update result set ball = '${ball += 1}' where userID = '${userID}'`);
         ctx.reply('javobingiz togri✅');
     }

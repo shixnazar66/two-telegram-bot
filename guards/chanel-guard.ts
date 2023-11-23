@@ -1,8 +1,10 @@
 import { InlineKeyboard, NextFunction,Context } from "grammy";
 import { Conversation, ConversationFlavor } from "@grammyjs/conversations";
 import { env } from "../config/env.config";
+
 type MyContext = Context & ConversationFlavor;
 type MyConversation = Conversation<MyContext>;
+
 export async function channelGuard(ctx: MyContext, next: NextFunction) {
   const user = ctx.from;
   if (user) {

@@ -61,7 +61,13 @@ export async function addQuestion(
   );
 }
 
-bot.hears("add", adminGuard, async (ctx) => {
+bot.command("add", adminGuard, async (ctx) => {
+  const id =  ctx.from?.id
+  const [[b]]:any = await pool.query(`select * from result where userID = '${id}'`)
+  if(!b){
+    ctx.reply('start bosib boshidan boshlang')
+    return
+  }
   ctx.conversation.enter('addquestion')
 })
 
@@ -82,8 +88,13 @@ bot.command('start',channelGuard, async (ctx) => {
   .resized()
 
 
-  bot.hears('me', async (ctx) => {
+  bot.command('me', async (ctx) => {
     const id =  ctx.from?.id
+    const [[b]]:any = await pool.query(`select * from result where userID = '${id}'`)
+    if(!b){
+      ctx.reply('start bosib boshidan boshlang')
+      return
+    }
     const name = ctx.from?.first_name
     const [[user]]:any = await pool.query(`select ball from result where userID = '${id}'`)
     await ctx.reply(`${name} 
@@ -103,16 +114,20 @@ balingiz ${user.ball}`)
     const [javob]:any = await pool.query(`select javob from test where fan = '${text}'`)
     const answer = new InlineKeyboard()
     .text('A',`a ${savol[i].ID}`).text('B',`b ${savol[i].ID}`).text('C',`c ${savol[i].ID}`).row()
-    await ctx.reply(`${savol[i].savol} 
+    await ctx.reply(`${savol[i].savol}? 
 
 ${javob[i].javob}`,{reply_markup:answer})}
 })
 
 
 bot.on("callback_query:data",async (ctx) => {
-  const str:any = ctx.callbackQuery.data
+  const str:any = ctx.callbackQuery.data  
   const userID = ctx.from.id
   const [[b]]:any = await pool.query(`select * from result where userID = '${userID}'`)
+  if(!b){
+    ctx.reply('start bosib boshidan boshlang')
+    return
+  }
   let  ball = b.ball
   const [[javob]]:any = await pool.query(`select * from test where ID = '${str.split(" ")[1]}'`)  
   const jv = javob.togri_javob
@@ -120,11 +135,16 @@ bot.on("callback_query:data",async (ctx) => {
   ctx.reply('javobingiz notogri❌')
   return
   }else{
+    const data = new Date()
+    await pool.query(`insert into result (userID,create_AT,javob,fan) values ('${userID}','${data}','${str[0]}','${str.split(" ")[1]}')`)
     await pool.query (`update result set ball = '${ball+=1}' where userID = '${userID}'`)
     ctx.reply('javobingiz togri✅')
   }
 })
 
 
+
+
+      
 
 bot.start();
