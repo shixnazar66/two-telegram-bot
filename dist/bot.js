@@ -40,6 +40,7 @@ const env_config_1 = require("./config/env.config");
 const db_config_1 = require("./config/db.config");
 const admin_guard_1 = require("./guards/admin-guard");
 const chanel_guard_1 = require("./guards/chanel-guard");
+// import { userGuard } from "./guards/user-guard";
 const token = env_config_1.env.BOT_TOKEN;
 const bot = new grammy_1.Bot(token);
 bot.use(grammy.session({ initial: () => ({}) }));
@@ -116,14 +117,11 @@ bot.on('message', (ctx) => __awaiter(void 0, void 0, void 0, function* () {
         return;
     }
     const [savol] = yield db_config_1.pool.query(`select * from test where fan = '${text}'`);
-    for (let i in savol) {
-        const [javob] = yield db_config_1.pool.query(`select javob from test where fan = '${text}'`);
-        const answer = new grammy_1.InlineKeyboard()
-            .text('A', `a ${savol[i].ID}`).text('B', `b ${savol[i].ID}`).text('C', `c ${savol[i].ID}`).row();
-        yield ctx.reply(`${savol[i].savol}? 
-
-${javob[i].javob}`, { reply_markup: answer });
-    }
+    const [javob] = yield db_config_1.pool.query(`select javob from test where fan = '${text}'`);
+    const answer = new grammy_1.InlineKeyboard()
+        .text('A', `a ${savol[0].ID}`).text('B', `b ${savol[0].ID}`).text('C', `c ${savol[0].ID}`).row();
+    yield ctx.reply(`${savol[0].savol}? 
+${javob[0].javob}`, { reply_markup: answer });
 }));
 bot.on("callback_query:data", (ctx) => __awaiter(void 0, void 0, void 0, function* () {
     const str = ctx.callbackQuery.data;
@@ -138,7 +136,6 @@ bot.on("callback_query:data", (ctx) => __awaiter(void 0, void 0, void 0, functio
     const jv = javob.togri_javob;
     if (jv != str[0]) {
         ctx.reply('javobingiz notogri❌');
-        return;
     }
     else {
         const data = new Date();
@@ -146,5 +143,17 @@ bot.on("callback_query:data", (ctx) => __awaiter(void 0, void 0, void 0, functio
         yield db_config_1.pool.query(`update result set ball = '${ball += 1}' where userID = '${userID}'`);
         ctx.reply('javobingiz togri✅');
     }
+    const [find] = yield db_config_1.pool.query(`select * from test where fan = '${javob.fan}'`);
+    const savol = find.filter((v) => {
+        if (v.ID > javob.ID) {
+            return true;
+        }
+        return false;
+    });
+    const answer = new grammy_1.InlineKeyboard()
+        .text('A', `a ${savol[0].ID}`).text('B', `b ${savol[0].ID}`).text('C', `c ${savol[0].ID}`).row();
+    yield ctx.reply(`${savol[0].savol}? 
+${savol[0].javob}`, { reply_markup: answer });
+    yield ctx.deleteMessage();
 }));
 bot.start();

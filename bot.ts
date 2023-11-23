@@ -10,17 +10,20 @@ import { env } from "./config/env.config";
 import { pool } from "./config/db.config";
 import { adminGuard } from "./guards/admin-guard";
 import { channelGuard } from "./guards/chanel-guard";
+// import { userGuard } from "./guards/user-guard";
 
 const token = env.BOT_TOKEN
 
 type MyContext = Context & ConversationFlavor;
 type MyConversation = Conversation<MyContext>;
 
+
 const bot = new Bot<MyContext>(token);
 
 
 bot.use(grammy.session({ initial: () => ({}) }));
 bot.use(conversations());
+
 
 bot.use(createConversation(addQuestion,{id:'addquestion'}))
 export async function addQuestion(
@@ -61,6 +64,9 @@ export async function addQuestion(
   );
 }
 
+
+
+
 bot.command("add", adminGuard, async (ctx) => {
   const id =  ctx.from?.id
   const [[b]]:any = await pool.query(`select * from result where userID = '${id}'`)
@@ -73,6 +79,7 @@ bot.command("add", adminGuard, async (ctx) => {
 
 
 
+
 bot.command('start',channelGuard, async (ctx) => {
     const user = ctx.message
     const data = new Date()
@@ -80,12 +87,16 @@ bot.command('start',channelGuard, async (ctx) => {
     await ctx.reply('tanlang',{reply_markup:question})
  }
 )
+
+
   
   const question = new Keyboard()
   .text('ona tili').text('matematika').row()
   .text('fizika').text('biologiya').row()
   .text('english')
   .resized()
+
+
 
 
   bot.command('me', async (ctx) => {
@@ -102,6 +113,8 @@ balingiz ${user.ball}`)
     })
 
 
+
+
  bot.on('message', async (ctx) => {
     const text = ctx.message.text
     const [[fans]]:any = await pool.query(`select fan from test where fan = '${text}'`)
@@ -110,14 +123,15 @@ balingiz ${user.ball}`)
       return
     }
     const [savol]:any = await pool.query(`select * from test where fan = '${text}'`) 
-    for(let i in savol){
+    
     const [javob]:any = await pool.query(`select javob from test where fan = '${text}'`)
     const answer = new InlineKeyboard()
-    .text('A',`a ${savol[i].ID}`).text('B',`b ${savol[i].ID}`).text('C',`c ${savol[i].ID}`).row()
-    await ctx.reply(`${savol[i].savol}? 
-
-${javob[i].javob}`,{reply_markup:answer})}
+    .text('A',`a ${savol[0].ID}`).text('B',`b ${savol[0].ID}`).text('C',`c ${savol[0].ID}`).row()
+    await ctx.reply(`${savol[0].savol}? 
+${javob[0].javob}`,{reply_markup:answer})
 })
+
+
 
 
 bot.on("callback_query:data",async (ctx) => {
@@ -133,13 +147,24 @@ bot.on("callback_query:data",async (ctx) => {
   const jv = javob.togri_javob
   if(jv != str[0]){
   ctx.reply('javobingiz notogri❌')
-  return
   }else{
     const data = new Date()
     await pool.query(`insert into result (userID,create_AT,javob,fan) values ('${userID}','${data}','${str[0]}','${str.split(" ")[1]}')`)
     await pool.query (`update result set ball = '${ball+=1}' where userID = '${userID}'`)
     ctx.reply('javobingiz togri✅')
   }
+  const [find]:any[] = await pool.query(`select * from test where fan = '${javob.fan}'`)
+  const savol:any = find.filter((v:any)=>{
+    if(v.ID>javob.ID){
+      return true
+    }
+    return false
+  })
+  const answer = new InlineKeyboard()
+  .text('A',`a ${savol[0].ID}`).text('B',`b ${savol[0].ID}`).text('C',`c ${savol[0].ID}`).row()
+  await ctx.reply(`${savol[0].savol}? 
+${savol[0].javob}`,{reply_markup:answer})
+await ctx.deleteMessage()
 })
 
 
