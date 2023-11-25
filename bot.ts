@@ -101,12 +101,12 @@ bot.command('start',channelGuard, async (ctx) => {
 
   bot.command('me', async (ctx) => {
     const id =  ctx.from?.id
+    const name = ctx.from?.first_name
     const [[b]]:any = await pool.query(`select * from result where userID = '${id}'`)
     if(!b){
       ctx.reply('start bosib boshidan boshlang')
       return
     }
-    const name = ctx.from?.first_name
     const [[user]]:any = await pool.query(`select ball from result where userID = '${id}'`)
     await ctx.reply(`${name} 
 balingiz ${user.ball}`)
@@ -119,15 +119,14 @@ balingiz ${user.ball}`)
     const text = ctx.message.text
     const [[fans]]:any = await pool.query(`select fan from test where fan = '${text}'`)
     if(!fans){
-      ctx.reply('bunday fan yoq')
-      return
+     await ctx.reply('bunday fan yoq')
     }
     const [savol]:any = await pool.query(`select * from test where fan = '${text}'`) 
-    
     const [javob]:any = await pool.query(`select javob from test where fan = '${text}'`)
     const answer = new InlineKeyboard()
     .text('A',`a ${savol[0].ID}`).text('B',`b ${savol[0].ID}`).text('C',`c ${savol[0].ID}`).row()
     await ctx.reply(`${savol[0].savol}? 
+
 ${javob[0].javob}`,{reply_markup:answer})
 })
 
@@ -135,7 +134,7 @@ ${javob[0].javob}`,{reply_markup:answer})
 
 
 bot.on("callback_query:data",async (ctx) => {
-  const str:any = ctx.callbackQuery.data  
+  const str:any = ctx.callbackQuery.data 
   const userID = ctx.from.id
   const [[b]]:any = await pool.query(`select * from result where userID = '${userID}'`)
   if(!b){
@@ -166,10 +165,9 @@ bot.on("callback_query:data",async (ctx) => {
 ${savol[0].javob}`,{reply_markup:answer})
 await ctx.deleteMessage()
 })
+  
 
 
 
-
-      
 
 bot.start();

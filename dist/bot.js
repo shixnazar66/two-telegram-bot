@@ -99,12 +99,12 @@ const question = new grammy_1.Keyboard()
 bot.command('me', (ctx) => __awaiter(void 0, void 0, void 0, function* () {
     var _b, _c;
     const id = (_b = ctx.from) === null || _b === void 0 ? void 0 : _b.id;
+    const name = (_c = ctx.from) === null || _c === void 0 ? void 0 : _c.first_name;
     const [[b]] = yield db_config_1.pool.query(`select * from result where userID = '${id}'`);
     if (!b) {
         ctx.reply('start bosib boshidan boshlang');
         return;
     }
-    const name = (_c = ctx.from) === null || _c === void 0 ? void 0 : _c.first_name;
     const [[user]] = yield db_config_1.pool.query(`select ball from result where userID = '${id}'`);
     yield ctx.reply(`${name} 
 balingiz ${user.ball}`);
@@ -113,14 +113,14 @@ bot.on('message', (ctx) => __awaiter(void 0, void 0, void 0, function* () {
     const text = ctx.message.text;
     const [[fans]] = yield db_config_1.pool.query(`select fan from test where fan = '${text}'`);
     if (!fans) {
-        ctx.reply('bunday fan yoq');
-        return;
+        yield ctx.reply('bunday fan yoq');
     }
     const [savol] = yield db_config_1.pool.query(`select * from test where fan = '${text}'`);
     const [javob] = yield db_config_1.pool.query(`select javob from test where fan = '${text}'`);
     const answer = new grammy_1.InlineKeyboard()
         .text('A', `a ${savol[0].ID}`).text('B', `b ${savol[0].ID}`).text('C', `c ${savol[0].ID}`).row();
     yield ctx.reply(`${savol[0].savol}? 
+
 ${javob[0].javob}`, { reply_markup: answer });
 }));
 bot.on("callback_query:data", (ctx) => __awaiter(void 0, void 0, void 0, function* () {
