@@ -84,14 +84,14 @@ bot.command('start',channelGuard, async (ctx) => {
     const user = ctx.message
     const data = new Date()
     await pool.query(`insert into result (userID,create_AT,ball) values ('${user?.chat.id}','${data}','0')`)
-    await ctx.reply('tanlang',{reply_markup:question})
+    await ctx.reply('fanni tanlang',{reply_markup:question})
  }
 )
 
 
   
   const question = new Keyboard()
-  .text('ona tili').text('matematika').row()
+  .text('onatili').text('matematika').row()
   .text('fizika').text('biologiya').row()
   .text('english')
   .resized()
@@ -103,14 +103,25 @@ bot.command('start',channelGuard, async (ctx) => {
     const id =  ctx.from?.id
     const name = ctx.from?.first_name
     const [[b]]:any = await pool.query(`select * from result where userID = '${id}'`)
+    const thems =await getAllThemes()
+    for(let i in thems){
+      let right = 0 
+      const [userr]:any = await pool.query(`SELECT * FROM result WHERE userID = ${id} AND fan ='${thems[i]}'` )
+      for (let i in userr) {
+        if (userr[i].javob == 'true') {
+          right++;
+        }
+      }
+      await ctx.reply(`${thems[i]} fanidan toplagan\nbalingiz ${right} ✅`);
+    }
     if(!b){
       ctx.reply('start bosib boshidan boshlang')
       return
     }
     const [[user]]:any = await pool.query(`select ball from result where userID = '${id}'`)
     await ctx.reply(`${name} 
-balingiz ${user.ball}`)
-    })
+barcha fandan balingiz ${user.ball}`)
+})
 
 
 
@@ -119,12 +130,13 @@ balingiz ${user.ball}`)
     const text = ctx.message.text
     const [[fans]]:any = await pool.query(`select fan from test where fan = '${text}'`)
     if(!fans){
-     await ctx.reply('bunday fan yoq')
+      ctx.reply('bunday fan yoq')
+      return
     }
     const [savol]:any = await pool.query(`select * from test where fan = '${text}'`) 
     const [javob]:any = await pool.query(`select javob from test where fan = '${text}'`)
     const answer = new InlineKeyboard()
-    .text('A',`a ${savol[0].ID}`).text('B',`b ${savol[0].ID}`).text('C',`c ${savol[0].ID}`).row()
+    .text('A',`a ${savol[0].ID} ${savol[0].fan}`).text('B',`b ${savol[0].ID} ${savol[0].fan}`).text('C',`c ${savol[0].ID} ${savol[0].fan}`).row()
     await ctx.reply(`${savol[0].savol}? 
 
 ${javob[0].javob}`,{reply_markup:answer})
@@ -145,10 +157,13 @@ bot.on("callback_query:data",async (ctx) => {
   const [[javob]]:any = await pool.query(`select * from test where ID = '${str.split(" ")[1]}'`)  
   const jv = javob.togri_javob
   if(jv != str[0]){
-  ctx.reply('javobingiz notogri❌')
+  await ctx.reply('javobingiz notogri❌')
+  const data = new Date()
+  await pool.query(`insert into result (userID,create_AT,javob,fan) values ('${userID}','${data}','${false}','${str.split(" ")[2]}')`)
+  await pool.query (`update result set ball = '${ball}' where userID = '${userID}'`)  
   }else{
     const data = new Date()
-    await pool.query(`insert into result (userID,create_AT,javob,fan) values ('${userID}','${data}','${str[0]}','${str.split(" ")[1]}')`)
+    await pool.query(`insert into result (userID,create_AT,javob,fan) values ('${userID}','${data}','${true}','${str.split(" ")[2]}')`)
     await pool.query (`update result set ball = '${ball+=1}' where userID = '${userID}'`)
     ctx.reply('javobingiz togri✅')
   }
@@ -160,7 +175,7 @@ bot.on("callback_query:data",async (ctx) => {
     return false
   })
   const answer = new InlineKeyboard()
-  .text('A',`a ${savol[0].ID}`).text('B',`b ${savol[0].ID}`).text('C',`c ${savol[0].ID}`).row()
+  .text('A',`a ${savol[0].ID} ${savol[0].fan}`).text('B',`b ${savol[0].ID} ${savol[0].fan}`).text('C',`c ${savol[0].ID} ${savol[0].fan}`).row()
   await ctx.reply(`${savol[0].savol}? 
 ${savol[0].javob}`,{reply_markup:answer})
 await ctx.deleteMessage()
@@ -171,3 +186,18 @@ await ctx.deleteMessage()
 
 
 bot.start();
+
+
+
+
+export async function getAllThemes() {
+  const [questions]:any = await pool.query(`SELECT fan FROM test`)
+  const themes: string[] = [];
+  for (let i of questions) {
+    if (!themes.includes(i.fan)) {
+      themes.push(i.fan);
+    }
+  }
+
+  return themes;
+}

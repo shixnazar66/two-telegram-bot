@@ -32,7 +32,7 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
     });
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.addQuestion = void 0;
+exports.getAllThemes = exports.addQuestion = void 0;
 const grammy_1 = require("grammy");
 const grammy = __importStar(require("grammy"));
 const conversations_1 = require("@grammyjs/conversations");
@@ -89,10 +89,10 @@ bot.command('start', chanel_guard_1.channelGuard, (ctx) => __awaiter(void 0, voi
     const user = ctx.message;
     const data = new Date();
     yield db_config_1.pool.query(`insert into result (userID,create_AT,ball) values ('${user === null || user === void 0 ? void 0 : user.chat.id}','${data}','0')`);
-    yield ctx.reply('tanlang', { reply_markup: question });
+    yield ctx.reply('fanni tanlang', { reply_markup: question });
 }));
 const question = new grammy_1.Keyboard()
-    .text('ona tili').text('matematika').row()
+    .text('onatili').text('matematika').row()
     .text('fizika').text('biologiya').row()
     .text('english')
     .resized();
@@ -101,24 +101,36 @@ bot.command('me', (ctx) => __awaiter(void 0, void 0, void 0, function* () {
     const id = (_b = ctx.from) === null || _b === void 0 ? void 0 : _b.id;
     const name = (_c = ctx.from) === null || _c === void 0 ? void 0 : _c.first_name;
     const [[b]] = yield db_config_1.pool.query(`select * from result where userID = '${id}'`);
+    const thems = yield getAllThemes();
+    for (let i in thems) {
+        let right = 0;
+        const [userr] = yield db_config_1.pool.query(`SELECT * FROM result WHERE userID = ${id} AND fan ='${thems[i]}'`);
+        for (let i in userr) {
+            if (userr[i].javob == 'true') {
+                right++;
+            }
+        }
+        yield ctx.reply(`${thems[i]} fanidan toplagan\nbalingiz ${right} ✅`);
+    }
     if (!b) {
         ctx.reply('start bosib boshidan boshlang');
         return;
     }
     const [[user]] = yield db_config_1.pool.query(`select ball from result where userID = '${id}'`);
     yield ctx.reply(`${name} 
-balingiz ${user.ball}`);
+barcha fandan balingiz ${user.ball}`);
 }));
 bot.on('message', (ctx) => __awaiter(void 0, void 0, void 0, function* () {
     const text = ctx.message.text;
     const [[fans]] = yield db_config_1.pool.query(`select fan from test where fan = '${text}'`);
     if (!fans) {
-        yield ctx.reply('bunday fan yoq');
+        ctx.reply('bunday fan yoq');
+        return;
     }
     const [savol] = yield db_config_1.pool.query(`select * from test where fan = '${text}'`);
     const [javob] = yield db_config_1.pool.query(`select javob from test where fan = '${text}'`);
     const answer = new grammy_1.InlineKeyboard()
-        .text('A', `a ${savol[0].ID}`).text('B', `b ${savol[0].ID}`).text('C', `c ${savol[0].ID}`).row();
+        .text('A', `a ${savol[0].ID} ${savol[0].fan}`).text('B', `b ${savol[0].ID} ${savol[0].fan}`).text('C', `c ${savol[0].ID} ${savol[0].fan}`).row();
     yield ctx.reply(`${savol[0].savol}? 
 
 ${javob[0].javob}`, { reply_markup: answer });
@@ -135,11 +147,14 @@ bot.on("callback_query:data", (ctx) => __awaiter(void 0, void 0, void 0, functio
     const [[javob]] = yield db_config_1.pool.query(`select * from test where ID = '${str.split(" ")[1]}'`);
     const jv = javob.togri_javob;
     if (jv != str[0]) {
-        ctx.reply('javobingiz notogri❌');
+        yield ctx.reply('javobingiz notogri❌');
+        const data = new Date();
+        yield db_config_1.pool.query(`insert into result (userID,create_AT,javob,fan) values ('${userID}','${data}','${false}','${str.split(" ")[2]}')`);
+        yield db_config_1.pool.query(`update result set ball = '${ball}' where userID = '${userID}'`);
     }
     else {
         const data = new Date();
-        yield db_config_1.pool.query(`insert into result (userID,create_AT,javob,fan) values ('${userID}','${data}','${str[0]}','${str.split(" ")[1]}')`);
+        yield db_config_1.pool.query(`insert into result (userID,create_AT,javob,fan) values ('${userID}','${data}','${true}','${str.split(" ")[2]}')`);
         yield db_config_1.pool.query(`update result set ball = '${ball += 1}' where userID = '${userID}'`);
         ctx.reply('javobingiz togri✅');
     }
@@ -151,9 +166,22 @@ bot.on("callback_query:data", (ctx) => __awaiter(void 0, void 0, void 0, functio
         return false;
     });
     const answer = new grammy_1.InlineKeyboard()
-        .text('A', `a ${savol[0].ID}`).text('B', `b ${savol[0].ID}`).text('C', `c ${savol[0].ID}`).row();
+        .text('A', `a ${savol[0].ID} ${savol[0].fan}`).text('B', `b ${savol[0].ID} ${savol[0].fan}`).text('C', `c ${savol[0].ID} ${savol[0].fan}`).row();
     yield ctx.reply(`${savol[0].savol}? 
 ${savol[0].javob}`, { reply_markup: answer });
     yield ctx.deleteMessage();
 }));
 bot.start();
+function getAllThemes() {
+    return __awaiter(this, void 0, void 0, function* () {
+        const [questions] = yield db_config_1.pool.query(`SELECT fan FROM test`);
+        const themes = [];
+        for (let i of questions) {
+            if (!themes.includes(i.fan)) {
+                themes.push(i.fan);
+            }
+        }
+        return themes;
+    });
+}
+exports.getAllThemes = getAllThemes;
